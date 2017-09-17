@@ -308,23 +308,26 @@ class CornersProblem(search.SearchProblem):
         corn_visited = ()
         if self.startingPosition in self.corners:
             corn_visited = self.startingPosition
-        return ((self.startingPosition),(corn_visited),0)
+
+        if corn_visited!=():
+            return ((self.startingPosition),(corn_visited))
+        else:
+            return ((self.startingPosition), ())
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
+        visited_corners = []
 
-        count = state[2]
+        if state[0] in self.corners and state[0] not in visited_corners:
+            visited_corners.append(state[0])
+        for data in state[1]:
+            if data in self.corners and data not in visited_corners:
+                visited_corners.append(data)
 
-
-        if state[0] in self.corners and state[0] not in state[1]:
-            count = count + 1
-
-        # if(len(state[1]) == 4)
-
-        if(count == 4):
+        if len(visited_corners) == 4:
             return True
         else:
             return False
@@ -341,23 +344,12 @@ class CornersProblem(search.SearchProblem):
             is the incremental cost of expanding to that successor
         """
         x, y = state[0]
-        # print state,"----------"
-        count = state[2]
         new_state = state[1]
-        # cv= ()
-        if state[0] in self.corners:
-            if state[0] not in state[1]:
+        if state[0] in self.corners and state[0] not in state[1] and state[0]!= ():
                 new_state = state[1]+ (state[0],)
-                # new_state = state[1]+ (state[0],)
-
-
-            count = count + 1
-
 
         successors = []
-        # for action in [ Directions.NORTH,Directions.SOUTH,Directions.EAST,Directions.WEST]:
-        for action in [Directions.WEST,Directions.SOUTH,Directions.NORTH, Directions.EAST]:
-
+        for action in [ Directions.NORTH,Directions.SOUTH,Directions.EAST,Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
 
@@ -366,10 +358,13 @@ class CornersProblem(search.SearchProblem):
             hitsWall = self.walls[nextx][nexty]
             if hitsWall == False:
                 if (nextx, nexty) not in new_state:
-                    nextState = ((nextx,nexty),new_state,count)
-                    nextState2 = [t for t in nextState if t != ()][0]
-                    successors.append( ((nextState2),action,1))
+                    lst = list(new_state)
+                    lst.sort(key= lambda tup: (tup[0],tup[1]))
+                    new_state = tuple(lst)
+                    nextState = ((nextx,nexty),new_state)
+                    successors.append( (nextState,action,1))
         self._expanded += 1 # DO NOT CHANGE
+        # print successors
         return successors
 
     def getCostOfActions(self, actions):

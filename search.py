@@ -136,9 +136,7 @@ def breadthFirstSearch(problem):
         state = st.pop()
         # if the goal state is reached return with the actions
         if problem.isGoalState(state[0]):
-            # print state
-            # for data in hash_visited:
-            #     print data, '\n'
+
             break
         elif state[0] not in hash_visited:
             #if not already visited
