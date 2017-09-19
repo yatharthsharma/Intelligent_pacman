@@ -345,6 +345,7 @@ class CornersProblem(search.SearchProblem):
         """
         x, y = state[0]
         new_state = state[1]
+        # print state[1]
         if state[0] in self.corners and state[0] not in state[1] and state[0]!= ():
                 new_state = state[1]+ (state[0],)
 
@@ -364,7 +365,7 @@ class CornersProblem(search.SearchProblem):
                     nextState = ((nextx,nexty),new_state)
                     successors.append( (nextState,action,1))
         self._expanded += 1 # DO NOT CHANGE
-        # print successors
+
         return successors
 
     def getCostOfActions(self, actions):
@@ -395,10 +396,29 @@ Directions.EAST
     admissible (as well as consistent).
     """
     corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    # walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    # return 0 # Default to trivial solution
+    xy1 = state[0]
+    xy2 = problem.corners
+
+
+    sum = 0
+    count = 0
+    unvisit  = []
+    for corn in xy2:
+        if corn not in state[1]:
+            count = count +1
+            sum = sum + abs(xy1[0] - corn[0]) + abs(xy1[1] - corn[1])
+            unvisit.append(abs(xy1[0] - corn[0]) + abs(xy1[1] - corn[1]))
+
+
+    if count == 0:
+        return 0
+    else:
+        return max(unvisit)
+
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -456,6 +476,8 @@ class FoodSearchProblem:
             cost += 1
         return cost
 
+
+
 class AStarFoodSearchAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
     def __init__(self):
@@ -491,8 +513,20 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    fgrid=  foodGrid.asList()
+    c = len(fgrid)
+
+    fgrid = sorted(fgrid)
+
+    sum = 0
+
+    if c==0:
+        return 0
+    else:
+        # print "------------",position[0]
+        # print '############',fgrid[c-1][1]
+        return  abs(position[0] - fgrid[0][0]) + abs(position[1] - fgrid[0][1])
+
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
