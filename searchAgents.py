@@ -284,6 +284,7 @@ class CornersProblem(search.SearchProblem):
         """
         Stores the walls, pacman's starting position and corners.
         """
+        self.startingGameState = startingGameState
         self.walls = startingGameState.getWalls()
         self.startingPosition = startingGameState.getPacmanPosition()
         top, right = self.walls.height-2, self.walls.width-2
@@ -327,6 +328,7 @@ class CornersProblem(search.SearchProblem):
             if data in self.corners and data not in visited_corners:
                 visited_corners.append(data)
 
+        #goal state is when all 4 corners have been traversed
         if len(visited_corners) == 4:
             return True
         else:
@@ -396,7 +398,7 @@ Directions.EAST
     admissible (as well as consistent).
     """
     corners = problem.corners # These are the corner coordinates
-    # walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
     # return 0 # Default to trivial solution
@@ -404,6 +406,7 @@ Directions.EAST
     xy2 = problem.corners
 
 
+    #for unvisited corner find the farthest corner and use that as the heuristic
     sum = 0
     count = 0
     unvisit  = []
@@ -413,6 +416,9 @@ Directions.EAST
             sum = sum + abs(xy1[0] - corn[0]) + abs(xy1[1] - corn[1])
             unvisit.append(abs(xy1[0] - corn[0]) + abs(xy1[1] - corn[1]))
 
+            # dis =  mazeDistance(corn,xy1,problem.startingGameState)
+            # print dis
+            # unvisit.append(dis )
 
     if count == 0:
         return 0
@@ -512,20 +518,141 @@ def foodHeuristic(state, problem):
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
+
+    """
+        Heuristics:
+        For the univisted food, find the max distance between food and postion considering the wall.
+    """
+    walls =  problem.walls
     position, foodGrid = state
     fgrid=  foodGrid.asList()
     c = len(fgrid)
 
-    fgrid = sorted(fgrid)
+    count = 0
 
-    sum = 0
+    unvisit = []
+    for food in fgrid:
+        x_food = food[0]
+        y_food = food[1]
+        x_curr = position[0]
+        y_curr = position[1]
+        x_start = x_curr
+        y_start = y_curr
+        walls_t = zip(*walls)
 
-    if c==0:
+        count = count + 1
+        count_dist = 0
+
+        """
+            condition1: when food is above current pacman position
+            condition2: when pacman is above food
+        """
+        if y_start> y_food:
+
+            #    Iterate one by one untill the y-axis (co-ordinate) of pacman and food converges
+
+            while y_start> y_food:
+                flag_min = 0
+                flag_plus = 0
+                if  walls[x_start][y_start-1]:
+                    walls_x_min = list(walls_t[y_start-1][:x_start])
+                    walls_x_plus = list(walls_t[y_start-1][x_start:])
+
+                    wall_plus_exc_start=  walls_x_plus[1:]
+
+
+                # for every iteration calculate the max horizontal distances it is needed to traverse in order to find no wall
+                #count the steps
+                    for i in xrange(len(walls_x_plus[1:])):
+                        if wall_plus_exc_start[i] == False:
+                            flag_plus = 1
+                            break
+                    for j in reversed(xrange(len(walls_x_min[:]))):
+                        if walls_x_min[j] == False:
+                            flag_min = 1
+                            break
+                    if flag_min == 1 and flag_plus ==1:
+                        # print "both-->",x_start + (i+1) ,j
+                        if i+1<x_start-j:
+                            count_dist = count_dist+ i+1
+                            x_start = x_start + (i+1)
+                        elif i+1>x_start-j:
+                            count_dist = count_dist + (x_start - j)
+                            x_start = j
+                        else:
+                            if x_curr>x_food:
+                                count_dist = count_dist + (x_start - j)
+                                x_start = j
+                            else:
+                                count_dist = count_dist + i + 1
+                                x_start = x_start + (i + 1)
+
+
+                    elif flag_plus == 1:
+                        count_dist = i + 1
+                        x_start = x_start + (i + 1)
+                    elif flag_min == 1:
+                        x_start = j
+                        count_dist = count_dist + (x_start - j)
+                    count_dist = count_dist + 1
+                else:
+                    count_dist = count_dist + 1
+                y_start = y_start - 1
+
+        else:
+            while y_start < y_food:
+                flag_min = 0
+                flag_plus = 0
+
+                if walls[x_start][y_start + 1]:
+                    walls_x_min = list(walls_t[y_start+1][:x_start])
+                    walls_x_plus = list(walls_t[y_start+1][x_start:])
+
+                    wall_plus_exc_start=  walls_x_plus[1:]
+                    for i in xrange(len(walls_x_plus[1:])):
+                        if wall_plus_exc_start[i] == False:
+                            flag_plus = 1
+                            break
+                    for j in reversed(xrange(len(walls_x_min[:]))):
+                        if walls_x_min[j] == False:
+                            flag_min = 1
+                            break
+                    if flag_min == 1 and flag_plus ==1:
+                        # print i+1
+                        # print x_start-j
+                        if i+1<x_start-j:
+                            count_dist = count_dist + i + 1
+                            x_start = x_start + (i+1)
+                        elif i+1>x_start-j:
+                            count_dist = count_dist + (x_start - j)
+                            x_start = j
+                        else:
+                            if x_curr>x_food:
+                                x_start = j
+                                count_dist = count_dist + (x_start - j)
+                            else:
+                                count_dist = count_dist + i + 1
+                                x_start = x_start + (i + 1)
+                                # print "cout--",count_dist
+                    elif flag_plus == 1:
+                        count_dist = count_dist + i + 1
+                        x_start = x_start + (i + 1)
+                    elif flag_min == 1:
+                        count_dist = count_dist + (x_start - j)
+                        x_start = j
+                    count_dist = count_dist + 1
+                else:
+                    count_dist = count_dist + 1
+                y_start = y_start + 1
+        count_dist = count_dist + abs(x_start - x_food)
+        unvisit.append(count_dist)
+
+    if count == 0:
         return 0
     else:
-        # print "------------",position[0]
-        # print '############',fgrid[c-1][1]
-        return  abs(position[0] - fgrid[0][0]) + abs(position[1] - fgrid[0][1])
+        #returning the maximum of univisted food
+        return max(unvisit)
+
 
 
 class ClosestDotSearchAgent(SearchAgent):
@@ -556,8 +683,11 @@ class ClosestDotSearchAgent(SearchAgent):
         walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # returning the actions using bfs
+        return search.bfs(problem)
+
+
+
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -591,9 +721,13 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         complete the problem definition.
         """
         x,y = state
+        # print self.food
+        if self.food[x][y]:
+            return 1
+        else:
+            return 0
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
 
 def mazeDistance(point1, point2, gameState):
     """
